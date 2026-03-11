@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reinforcement & Representation Learning</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d14;
+    --surface: #111520;
+    --card: #161c2d;
+    --border: #1e2a45;
+    --accent1: #00e5ff;
+    --accent2: #7c3aed;
+    --accent3: #f59e0b;
+    --accent4: #10b981;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --co1: #00e5ff;
+    --co2: #a855f7;
+    --co3: #f59e0b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID BG */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,13,20,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+  }
+
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    gap: 1rem;
+  }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--accent1);
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .nav-tab {
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+  }
+
+  .nav-tab:hover { color: var(--text); background: var(--surface); }
+  .nav-tab.active { color: var(--bg); }
+  .nav-tab[data-mod="0"].active { background: var(--co1); border-color: var(--co1); color: #000; }
+  .nav-tab[data-mod="1"].active { background: var(--co2); border-color: var(--co2); }
+  .nav-tab[data-mod="2"].active { background: var(--co3); border-color: var(--co3); color: #000; }
+
+  /* PROGRESS */
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent1), var(--accent2));
+    transition: width 0.4s ease;
+  }
+
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 4rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* MODULE PANEL */
+  .module-panel { display: none; animation: fadeIn 0.35s ease; }
+  .module-panel.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .module-hero {
+    margin-bottom: 2rem;
+    padding: 2rem 2.5rem;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .module-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    opacity: 0.06;
+    pointer-events: none;
+  }
+
+  .mod-0 .module-hero::before { background: var(--co1); }
+  .mod-1 .module-hero::before { background: var(--co2); }
+  .mod-2 .module-hero::before { background: var(--co3); }
+
+  .co-badge {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+  }
+
+  .mod-0 .co-badge { background: rgba(0,229,255,0.12); color: var(--co1); }
+  .mod-1 .co-badge { background: rgba(168,85,247,0.12); color: var(--co2); }
+  .mod-2 .co-badge { background: rgba(245,158,11,0.12); color: var(--co3); }
+
+  .module-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+  }
+
+  .module-desc {
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+
+  /* TOPIC GRID */
+  .topics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .topic-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+
+  .topic-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--muted);
+  }
+
+  .topic-card.expanded { border-color: var(--muted); }
+  .mod-0 .topic-card.expanded { border-color: var(--co1); box-shadow: 0 0 20px rgba(0,229,255,0.08); }
+  .mod-1 .topic-card.expanded { border-color: var(--co2); box-shadow: 0 0 20px rgba(168,85,247,0.08); }
+  .mod-2 .topic-card.expanded { border-color: var(--co3); box-shadow: 0 0 20px rgba(245,158,11,0.08); }
+
+  .topic-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+  }
+
+  .topic-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .mod-0 .topic-icon { background: rgba(0,229,255,0.1); }
+  .mod-1 .topic-icon { background: rgba(168,85,247,0.1); }
+  .mod-2 .topic-icon { background: rgba(245,158,11,0.1); }
+
+  .topic-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    flex: 1;
+    line-height: 1.3;
+  }
+
+  .topic-arrow {
+    font-size: 0.75rem;
+    color: var(--muted);
+    transition: transform 0.2s;
+  }
+
+  .topic-card.expanded .topic-arrow { transform: rotate(180deg); }
+
+  .topic-content {
+    display: none;
+    padding: 0 1.25rem 1.25rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0;
+  }
+
+  .topic-card.expanded .topic-content { display: block; }
+
+  .topic-content p {
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: #94a3b8;
+    margin-top: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .topic-content strong { color: var(--text); }
+
+  .key-points {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .kp {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+
+  .kp-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .mod-0 .kp-dot { background: var(--co1); }
+  .mod-1 .kp-dot { background: var(--co2); }
+  .mod-2 .kp-dot { background: var(--co3); }
+
+  /* FORMULA BLOCKS */
+  .formula {
+    margin: 0.75rem 0;
+    padding: 0.75rem 1rem;
+    background: #0d1117;
+    border-radius: 8px;
+    border-left: 3px solid var(--co2);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    color: #c9d1d9;
+    line-height: 1.6;
+    overflow-x: auto;
+  }
+
+  .mod-0 .formula { border-color: var(--co1); }
+  .mod-2 .formula { border-color: var(--co3); }
+
+  /* DIAGRAMS */
+  .diagram {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: #0d1117;
+    border-radius: 8px;
+    border: 1px dashed var(--border);
+    text-align: center;
+  }
+
+  .diagram svg { max-width: 100%; }
+
+  /* SPECIAL CALLOUTS */
+  .callout {
+    margin: 0.75rem 0;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+
+  .callout.info { background: rgba(0,229,255,0.06); border: 1px solid rgba(0,229,255,0.15); color: #7dd3fc; }
+  .callout.warn { background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.15); color: #fcd34d; }
+  .callout.tip  { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15); color: #6ee7b7; }
+
+  .callout-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.3rem;
+    opacity: 0.7;
+    text-transform: uppercase;
+  }
+
+  /* COMPARISON TABLE */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    margin: 0.75rem 0;
+  }
+
+  .compare-table th {
+    background: var(--surface);
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text);
+    border: 1px solid var(--border);
+    font-size: 0.75rem;
+  }
+
+  .compare-table td {
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    color: #94a3b8;
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  .compare-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* QUICK QUIZ */
+  .quiz-section {
+    margin-top: 2rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.75rem;
+  }
+
+  .quiz-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .quiz-title {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .quiz-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(245,158,11,0.1);
+    color: var(--accent3);
+    letter-spacing: 0.08em;
+  }
+
+  .question-block {
+    margin-bottom: 1.25rem;
+    padding: 1rem;
+    background: var(--surface);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .question-text {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    line-height: 1.5;
+  }
+
+  .options { display: flex; flex-direction: column; gap: 0.4rem; }
+
+  .option {
+    padding: 7px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: #94a3b8;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.82rem;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+  }
+
+  .option:hover { border-color: var(--muted); color: var(--text); }
+  .option.correct { background: rgba(16,185,129,0.1); border-color: var(--accent4); color: var(--accent4); }
+  .option.wrong { background: rgba(239,68,68,0.1); border-color: #ef4444; color: #f87171; }
+  .option:disabled { cursor: default; }
+
+  .answer-reveal {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--muted);
+    display: none;
+    line-height: 1.5;
+  }
+
+  .answer-reveal.show { display: block; }
+
+  /* SUMMARY STATS */
+  .stats-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .stat-card {
+    flex: 1;
+    min-width: 130px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .stat-val {
+    font-size: 1.6rem;
+    font-weight: 800;
+    font-family: 'Space Mono', monospace;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-label { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+
+  .mod-0 .stat-val { color: var(--co1); }
+  .mod-1 .stat-val { color: var(--co2); }
+  .mod-2 .stat-val { color: var(--co3); }
+
+  @media (max-width: 600px) {
+    .topics-grid { grid-template-columns: 1fr; }
+    .module-title { font-size: 1.4rem; }
+    .header-inner { flex-direction: column; height: auto; padding: 0.75rem 0; gap: 0.5rem; }
+    .nav-tabs { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">// RL + REPR LEARNING</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-mod="0" onclick="switchModule(0)">CO1 · Overview</button>
+      <button class="nav-tab" data-mod="1" onclick="switchModule(1)">CO2 · MDP & Policies</button>
+      <button class="nav-tab" data-mod="2" onclick="switchModule(2)">CO3 · Algorithms</button>
+    </div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:33%"></div></div>
+</div>
+
+<div class="main">
+
+<!-- ═══════════════════════════ CO1 ═══════════════════════════ -->
+<div class="module-panel mod-0 active" id="mod-0">
+
+  <div class="module-hero">
+    <div class="co-badge">CO1 · 12 HOURS</div>
+    <div class="module-title">Reinforcement Learning Overview</div>
+    <div class="module-desc">Origins, history, problem formulation, and the intersection of RL with other ML paradigms. Includes deep RL and future trends.</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val">1950s</div><div class="stat-label">RL Origins</div></div>
+    <div class="stat-card"><div class="stat-val">5</div><div class="stat-label">Core Elements</div></div>
+    <div class="stat-card"><div class="stat-val">3</div><div class="stat-label">ML Paradigms</div></div>
+    <div class="stat-card"><div class="stat-val">DRL</div><div class="stat-label">Modern Form</div></div>
+  </div>
+
+  <div class="topics-grid">
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">📜</div>
+        <div class="topic-name">Origin & History of RL</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>RL has roots in <strong>psychology (trial-and-error learning)</strong>, <strong>control theory</strong>, and <strong>operations research</strong>. It emerged as a formal ML subfield in the 1980s–90s.</p>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div>1950s: Minsky's SNARCs, Shannon's chess — earliest experiments</div>
+          <div class="kp"><div class="kp-dot"></div>1957: Bellman formulates Dynamic Programming</div>
+          <div class="kp"><div class="kp-dot"></div>1960s: Samuel's checkers player uses self-play RL</div>
+          <div class="kp"><div class="kp-dot"></div>1989: Watkins proposes Q-Learning</div>
+          <div class="kp"><div class="kp-dot"></div>1992: Tesauro's TD-Gammon beats world-champion backgammon players</div>
+          <div class="kp"><div class="kp-dot"></div>2013: DQN (DeepMind) plays Atari — deep RL begins</div>
+          <div class="kp"><div class="kp-dot"></div>2016: AlphaGo defeats Lee Sedol — milestone moment</div>
+        </div>
+        <div class="callout info"><div class="callout-label">KEY INSIGHT</div>RL is inspired by how animals learn from consequences. A dog learns to sit for a treat — same idea: action → reward signal → policy update.</div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">🔗</div>
+        <div class="topic-name">Connections with Other Fields</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>RL sits at the intersection of multiple disciplines. Understanding these connections gives intuition for why it works.</p>
+        <table class="compare-table">
+          <tr><th>Field</th><th>Connection to RL</th></tr>
+          <tr><td>Psychology</td><td>Pavlovian/operant conditioning; reward/punishment signals shape behavior</td></tr>
+          <tr><td>Control Theory</td><td>Optimal control, feedback loops, LQR — RL generalizes these</td></tr>
+          <tr><td>Operations Research</td><td>MDPs, dynamic programming roots</td></tr>
+          <tr><td>Neuroscience</td><td>Dopamine = reward signal; TD learning mirrors dopamine neuron firing</td></tr>
+          <tr><td>Game Theory</td><td>Multi-agent RL, Nash equilibria</td></tr>
+          <tr><td>Supervised ML</td><td>RL uses no labeled data — learns from interaction, not datasets</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">⚙️</div>
+        <div class="topic-name">Elements of RL</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>Every RL system is defined by five core components:</p>
+        <div class="diagram">
+          <svg viewBox="0 0 400 180" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="70" width="100" height="40" rx="8" fill="none" stroke="#00e5ff" stroke-width="1.5"/>
+            <text x="60" y="94" text-anchor="middle" fill="#00e5ff" font-family="Outfit" font-size="12" font-weight="600">AGENT</text>
+            <rect x="290" y="70" width="100" height="40" rx="8" fill="none" stroke="#a855f7" stroke-width="1.5"/>
+            <text x="340" y="94" text-anchor="middle" fill="#a855f7" font-family="Outfit" font-size="12" font-weight="600">ENV</text>
+            <path d="M 110 82 L 290 82" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arr1)" fill="none"/>
+            <text x="200" y="75" text-anchor="middle" fill="#f59e0b" font-family="Outfit" font-size="10">Action aₜ</text>
+            <path d="M 290 98 L 110 98" stroke="#10b981" stroke-width="1.5" marker-end="url(#arr2)" fill="none"/>
+            <text x="200" y="115" text-anchor="middle" fill="#10b981" font-family="Outfit" font-size="10">State sₜ₊₁, Reward rₜ₊₁</text>
+            <defs>
+              <marker id="arr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#f59e0b"/>
+              </marker>
+              <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L6,3 L0,6 Z" fill="#10b981"/>
+              </marker>
+            </defs>
+          </svg>
+        </div>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div><strong>Agent</strong> — the learner/decision-maker</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Environment</strong> — everything the agent interacts with</div>
+          <div class="kp"><div class="kp-dot"></div><strong>State (s)</strong> — current situation of the environment</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Action (a)</strong> — what the agent chooses to do</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Reward (r)</strong> — scalar feedback signal after each action</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Policy (π)</strong> — mapping from states to actions (what to do)</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Value Function</strong> — expected long-term reward from a state</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Model (optional)</strong> — agent's internal model of environment dynamics</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">🚧</div>
+        <div class="topic-name">Limitations & Scope of RL</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>RL is powerful but has real-world constraints you must know for exams and practice.</p>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div><strong>Sample inefficiency</strong> — needs millions of interactions; expensive in real world</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Reward design is hard</strong> — poorly specified rewards cause reward hacking</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Credit assignment problem</strong> — which past action caused this reward?</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Exploration vs Exploitation</strong> — try new things vs use known-good actions</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Non-stationarity</strong> — environment or policy may shift over time</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Partial observability</strong> — agent may not see the full state</div>
+        </div>
+        <div class="callout warn"><div class="callout-label">SCOPE</div>RL works best in well-defined environments with clear reward signals — games, robotics, recommendation systems, resource management.</div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">🎮</div>
+        <div class="topic-name">Extended Example: Tic-Tac-Toe</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>Tic-Tac-Toe is the canonical RL intro example. It maps every RL element to a concrete game.</p>
+        <table class="compare-table">
+          <tr><th>RL Element</th><th>Tic-Tac-Toe Mapping</th></tr>
+          <tr><td>State (s)</td><td>Current board configuration (3x3 grid, X/O/empty)</td></tr>
+          <tr><td>Action (a)</td><td>Placing X or O in an empty cell</td></tr>
+          <tr><td>Reward (r)</td><td>+1 win, -1 loss, 0 draw or mid-game</td></tr>
+          <tr><td>Policy (π)</td><td>Which cell to choose given the board state</td></tr>
+          <tr><td>Value function</td><td>Probability of winning from each state</td></tr>
+          <tr><td>Episode</td><td>One complete game from start to win/draw/loss</td></tr>
+        </table>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div>Agent improves by playing many games (self-play or vs opponent)</div>
+          <div class="kp"><div class="kp-dot"></div>Temporal Difference (TD) learning updates values after each move</div>
+          <div class="kp"><div class="kp-dot"></div>Eventually converges to near-optimal play (minimax)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">🤔</div>
+        <div class="topic-name">RL vs Representation Learning — Same?</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p><strong>No — they are distinct but deeply complementary.</strong></p>
+        <table class="compare-table">
+          <tr><th></th><th>Reinforcement Learning</th><th>Representation Learning</th></tr>
+          <tr><td>Goal</td><td>Learn optimal policy via rewards</td><td>Learn useful feature representations of data</td></tr>
+          <tr><td>Feedback</td><td>Reward signals (sparse)</td><td>Self-supervised / unsupervised</td></tr>
+          <tr><td>Output</td><td>Policy / value function</td><td>Embeddings / latent features</td></tr>
+          <tr><td>Examples</td><td>Q-learning, PPO, DQN</td><td>Autoencoders, BERT, VAE</td></tr>
+        </table>
+        <div class="callout tip"><div class="callout-label">CONNECTION</div>In Deep RL (like DQN), a neural network learns <em>both</em> — it builds representations of game states AND learns a policy. So modern deep RL <strong>uses</strong> representation learning internally.</div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">🧠</div>
+        <div class="topic-name">Deep Reinforcement Learning</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p><strong>Deep RL = RL + Deep Neural Networks</strong> as function approximators. This overcomes the curse of dimensionality in traditional tabular RL.</p>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div><strong>Problem with tabular RL</strong>: Need a table entry for every state-action pair — impossible for Atari (10^70 states)</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Solution</strong>: Use a neural network to approximate Q(s,a) or π(a|s)</div>
+          <div class="kp"><div class="kp-dot"></div><strong>DQN (2013)</strong>: CNN processes raw pixels → Q-values for each action</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Key tricks</strong>: Experience Replay + Target Network → stable training</div>
+          <div class="kp"><div class="kp-dot"></div>AlphaGo, AlphaZero, OpenAI Five, ChatGPT (RLHF) — all deep RL</div>
+        </div>
+        <div class="formula">Input (pixels/state) → CNN/MLP → Q-values for each action
+Policy: π(s) = argmax_a Q(s,a)</div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">🔭</div>
+        <div class="topic-name">Future Trends in RL</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div><strong>RLHF</strong> — RL from Human Feedback (LLMs like GPT-4, Claude)</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Offline RL</strong> — learn from static datasets without online interaction</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Multi-agent RL</strong> — cooperative and competitive agent systems</div>
+          <div class="kp"><div class="kp-dot"></div><strong>World Models</strong> — agents build internal simulators of environment (DreamerV3)</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Foundation models + RL</strong> — pre-trained transformers as RL policies</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Safe RL</strong> — constrained RL for real-world deployment (robotics, healthcare)</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- QUIZ CO1 -->
+  <div class="quiz-section">
+    <div class="quiz-header">
+      <div class="quiz-title">⚡ Quick Check — CO1</div>
+      <div class="quiz-badge">CLICK TO ANSWER</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-text">Q1. Which of the following is NOT a core element of a Reinforcement Learning system?</div>
+      <div class="options">
+        <button class="option" onclick="answer(this, false)">a) Policy</button>
+        <button class="option" onclick="answer(this, false)">b) Reward Signal</button>
+        <button class="option" onclick="answer(this, true)">c) Gradient Descent Algorithm</button>
+        <button class="option" onclick="answer(this, false)">d) Value Function</button>
+      </div>
+      <div class="answer-reveal">Gradient Descent is an optimization technique (used inside a neural net), not a defined element of an RL system. The 5 elements are: Agent, Environment, State, Action, Reward (+ Policy + Value Function).</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-text">Q2. In the Tic-Tac-Toe RL example, what constitutes the REWARD signal?</div>
+      <div class="options">
+        <button class="option" onclick="answer(this, false)">a) The board state after each move</button>
+        <button class="option" onclick="answer(this, true)">b) +1 for win, -1 for loss, 0 for draw</button>
+        <button class="option" onclick="answer(this, false)">c) The number of empty cells remaining</button>
+        <button class="option" onclick="answer(this, false)">d) The opponent's policy</button>
+      </div>
+      <div class="answer-reveal">Reward is a scalar feedback at the end of (or during) an episode. Here it's +1 win, −1 loss, 0 draw or non-terminal.</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-text">Q3. Deep RL differs from tabular RL primarily because it uses _____ to approximate value functions.</div>
+      <div class="options">
+        <button class="option" onclick="answer(this, false)">a) Lookup tables</button>
+        <button class="option" onclick="answer(this, false)">b) Dynamic Programming</button>
+        <button class="option" onclick="answer(this, true)">c) Neural Networks</button>
+        <button class="option" onclick="answer(this, false)">d) Genetic Algorithms</button>
+      </div>
+      <div class="answer-reveal">Deep RL uses neural networks as function approximators — this allows it to handle high-dimensional state spaces (images, continuous states) that tabular methods cannot.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ CO2 ═══════════════════════════ -->
+<div class="module-panel mod-1" id="mod-1">
+
+  <div class="module-hero">
+    <div class="co-badge">CO2 · 11 HOURS</div>
+    <div class="module-title">MDP & Decision Policies</div>
+    <div class="module-desc">Markov Decision Processes, Bellman equations, value functions, optimality, and policy gradient methods with variance reduction.</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val">MDP</div><div class="stat-label">Core Framework</div></div>
+    <div class="stat-card"><div class="stat-val">V, Q</div><div class="stat-label">Value Functions</div></div>
+    <div class="stat-card"><div class="stat-val">γ</div><div class="stat-label">Discount Factor</div></div>
+    <div class="stat-card"><div class="stat-val">∇π</div><div class="stat-label">Policy Gradient</div></div>
+  </div>
+
+  <div class="topics-grid">
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">🗺️</div>
+        <div class="topic-name">Introduction to MDP</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>A <strong>Markov Decision Process</strong> is the mathematical framework for sequential decision-making under uncertainty.</p>
+        <div class="formula">MDP = (S, A, P, R, γ)
+
+S = set of states
+A = set of actions  
+P(s'|s,a) = transition probability
+R(s,a,s') = reward function
+γ ∈ [0,1] = discount factor</div>
+        <div class="callout info"><div class="callout-label">MARKOV PROPERTY</div>The future depends only on the present state, not the history: P(sₜ₊₁|sₜ,aₜ,...s₁,a₁) = P(sₜ₊₁|sₜ,aₜ)</div>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div><strong>Finite MDP</strong>: finite S and A — tabular solution possible</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Episodic</strong>: has terminal state (game ends)</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Continuing</strong>: no terminal state, runs forever (use discounting)</div>
+          <div class="kp"><div class="kp-dot"></div>γ close to 0 → myopic (values immediate rewards); γ close to 1 → far-sighted</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">💎</div>
+        <div class="topic-name">State & Action Value Functions</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>Two critical functions measure the "goodness" of being in a state or taking an action.</p>
+        <div class="formula">State Value Function V^π(s):
+V^π(s) = E_π[Gₜ | sₜ=s]
+       = E_π[Σ γᵏ rₜ₊ₖ₊₁ | sₜ=s]
+
+Action Value Function Q^π(s,a):
+Q^π(s,a) = E_π[Gₜ | sₜ=s, aₜ=a]
+
+Return Gₜ = rₜ₊₁ + γrₜ₊₂ + γ²rₜ₊₃ + ...</div>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div><strong>V(s)</strong>: expected return starting from state s, following policy π</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Q(s,a)</strong>: expected return taking action a in state s, then following π</div>
+          <div class="kp"><div class="kp-dot"></div>Relationship: V^π(s) = Σ_a π(a|s) · Q^π(s,a)</div>
+          <div class="kp"><div class="kp-dot"></div>Q is more useful in practice — can derive policy directly: π(s) = argmax_a Q(s,a)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">🔔</div>
+        <div class="topic-name">Bellman Expectation Equations</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>The <strong>Bellman equations</strong> express value functions recursively — the value of a state equals immediate reward plus discounted value of the next state.</p>
+        <div class="formula">Bellman Expectation for V^π:
+V^π(s) = Σ_a π(a|s) Σ_{s'} P(s'|s,a)[R(s,a,s') + γ·V^π(s')]
+
+Bellman Expectation for Q^π:
+Q^π(s,a) = Σ_{s'} P(s'|s,a)[R(s,a,s') + γ·Σ_{a'} π(a'|s')·Q^π(s',a')]</div>
+        <div class="callout info"><div class="callout-label">INTUITION</div>Think recursively: "Value of being here = reward I'll get now + how good the place I end up will be." This forms a system of linear equations solvable for small MDPs.</div>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div>Basis for Policy Evaluation (computing V^π for a given policy)</div>
+          <div class="kp"><div class="kp-dot"></div>Can be solved exactly for small tabular MDPs</div>
+          <div class="kp"><div class="kp-dot"></div>For large/continuous spaces → approximate with neural networks</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">🏆</div>
+        <div class="topic-name">Optimality & Bellman Optimality</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>An <strong>optimal policy π*</strong> achieves the maximum expected return from every state. The optimal value functions satisfy the Bellman Optimality Equations.</p>
+        <div class="formula">Bellman Optimality for V*:
+V*(s) = max_a Σ_{s'} P(s'|s,a)[R(s,a,s') + γ·V*(s')]
+
+Bellman Optimality for Q*:
+Q*(s,a) = Σ_{s'} P(s'|s,a)[R(s,a,s') + γ·max_{a'} Q*(s',a')]
+
+Optimal Policy:
+π*(s) = argmax_a Q*(s,a)</div>
+        <div class="callout tip"><div class="callout-label">KEY DIFFERENCE</div>Bellman <em>Expectation</em> uses Σ over π(a|s) (average over policy). Bellman <em>Optimality</em> uses <strong>max</strong> over actions — greedy with respect to optimal Q.</div>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div>For finite MDPs, optimal policy always exists and is deterministic</div>
+          <div class="kp"><div class="kp-dot"></div>Value Iteration: repeatedly apply Bellman optimality update → converges to V*</div>
+          <div class="kp"><div class="kp-dot"></div>Policy Iteration: evaluate policy → improve policy → repeat → converges to π*</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">📐</div>
+        <div class="topic-name">Policy Gradient Methods</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>Instead of learning value functions, <strong>Policy Gradient</strong> methods directly optimize the policy π_θ (parameterized by θ) using gradient ascent on expected return.</p>
+        <div class="formula">Objective: J(θ) = E_π[Gₜ]
+
+Policy Gradient Theorem:
+∇_θ J(θ) = E_π[∇_θ log π_θ(a|s) · Q^π(s,a)]
+
+REINFORCE update:
+θ ← θ + α · ∇_θ log π_θ(aₜ|sₜ) · Gₜ</div>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div><strong>Works for continuous action spaces</strong> — unlike value-based methods</div>
+          <div class="kp"><div class="kp-dot"></div>Can learn stochastic policies (sometimes optimal, e.g., in poker)</div>
+          <div class="kp"><div class="kp-dot"></div>log π term: increase probability of actions that led to high return</div>
+          <div class="kp"><div class="kp-dot"></div>Problem: very high variance — needs many samples</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">📉</div>
+        <div class="topic-name">Reducing Variance in Policy Gradients</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>High variance in policy gradient estimates makes training unstable. Several techniques reduce variance while keeping the estimator unbiased.</p>
+        <div class="formula">Baseline subtraction (unbiased variance reduction):
+∇_θ J(θ) = E_π[∇_θ log π_θ(a|s) · (Q^π(s,a) - b(s))]
+
+Most common baseline: b(s) = V^π(s) → gives Advantage A(s,a):
+A(s,a) = Q^π(s,a) - V^π(s)
+
+Actor-Critic update:
+θ ← θ + α · ∇_θ log π_θ(a|s) · A(s,a)</div>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div><strong>Baseline</strong>: subtract expected value → reduces variance, doesn't change gradient mean</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Advantage function A(s,a)</strong>: "how much better is this action than average?"</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Actor-Critic</strong>: Actor = policy π_θ; Critic = value function V_w (reduces variance)</div>
+          <div class="kp"><div class="kp-dot"></div><strong>PPO, A3C, A2C</strong> — modern algorithms all use advantage estimation</div>
+          <div class="kp"><div class="kp-dot"></div><strong>GAE</strong> (Generalized Advantage Estimation) — exponential average of TD errors</div>
+        </div>
+        <div class="callout tip"><div class="callout-label">EXAM TIP</div>A(s,a) > 0 → action was better than average → increase its probability. A(s,a) &lt; 0 → worse than average → decrease its probability.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- QUIZ CO2 -->
+  <div class="quiz-section">
+    <div class="quiz-header">
+      <div class="quiz-title">⚡ Quick Check — CO2</div>
+      <div class="quiz-badge">CLICK TO ANSWER</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-text">Q1. The Markov Property states that the next state depends on:</div>
+      <div class="options">
+        <button class="option" onclick="answer(this, false)">a) All previous states and actions</button>
+        <button class="option" onclick="answer(this, true)">b) Only the current state and action</button>
+        <button class="option" onclick="answer(this, false)">c) Only the current reward</button>
+        <button class="option" onclick="answer(this, false)">d) The initial state and the current action</button>
+      </div>
+      <div class="answer-reveal">Markov property: future is conditionally independent of history given the present. P(s'|s,a) is all you need — no memory of past states required.</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-text">Q2. The Bellman Optimality equation uses _____ over actions, unlike the Bellman Expectation equation which uses _____.</div>
+      <div class="options">
+        <button class="option" onclick="answer(this, true)">a) max; weighted sum (Σ_a π(a|s))</button>
+        <button class="option" onclick="answer(this, false)">b) weighted sum; max</button>
+        <button class="option" onclick="answer(this, false)">c) min; max</button>
+        <button class="option" onclick="answer(this, false)">d) argmax; argmin</button>
+      </div>
+      <div class="answer-reveal">Bellman Expectation averages over the policy (Σ_a π·Q). Bellman Optimality takes the greedy max — giving us the best possible value achievable.</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-text">Q3. In Actor-Critic methods, the CRITIC's role is to:</div>
+      <div class="options">
+        <button class="option" onclick="answer(this, false)">a) Select the best action in each state</button>
+        <button class="option" onclick="answer(this, true)">b) Estimate the value function to reduce gradient variance</button>
+        <button class="option" onclick="answer(this, false)">c) Explore the environment randomly</button>
+        <button class="option" onclick="answer(this, false)">d) Store past experience in replay buffer</button>
+      </div>
+      <div class="answer-reveal">The Critic estimates V(s) or Q(s,a) and provides the advantage signal A(s,a) = Q - V to the Actor, dramatically reducing policy gradient variance.</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-text">Q4. What is the relationship between V^π(s) and Q^π(s,a)?</div>
+      <div class="options">
+        <button class="option" onclick="answer(this, false)">a) V^π(s) = max_a Q^π(s,a)</button>
+        <button class="option" onclick="answer(this, true)">b) V^π(s) = Σ_a π(a|s) · Q^π(s,a)</button>
+        <button class="option" onclick="answer(this, false)">c) Q^π(s,a) = V^π(s) + R(s,a)</button>
+        <button class="option" onclick="answer(this, false)">d) V^π(s) = Q^π(s,a) − γ·V^π(s')</button>
+      </div>
+      <div class="answer-reveal">V^π(s) is the expected value when averaging over all actions weighted by the policy π. If you fix the action to a specific a, you get Q^π(s,a). V is the policy-weighted average of Q.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ CO3 ═══════════════════════════ -->
+<div class="module-panel mod-2" id="mod-2">
+
+  <div class="module-hero">
+    <div class="co-badge">CO3 · ALGORITHMS</div>
+    <div class="module-title">RL Algorithms & Applications</div>
+    <div class="module-desc">Control learning, Q-learning, SARSA-Lambda, and Deep Q-Networks (DQN) — from tabular to deep, on-policy to off-policy.</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val">TD</div><div class="stat-label">Core Idea</div></div>
+    <div class="stat-card"><div class="stat-val">Q*</div><div class="stat-label">Target</div></div>
+    <div class="stat-card"><div class="stat-val">λ</div><div class="stat-label">Eligibility Trace</div></div>
+    <div class="stat-card"><div class="stat-val">DQN</div><div class="stat-label">Deep Version</div></div>
+  </div>
+
+  <div class="topics-grid">
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">🎛️</div>
+        <div class="topic-name">Control Learning Algorithms Overview</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>Control learning = finding the <strong>optimal policy</strong> through interaction. Two main families:</p>
+        <table class="compare-table">
+          <tr><th>Property</th><th>On-Policy (SARSA)</th><th>Off-Policy (Q-Learning)</th></tr>
+          <tr><td>Learns from</td><td>Current policy's actions</td><td>Can learn from any actions</td></tr>
+          <tr><td>Update uses</td><td>Next action actually taken (a')</td><td>Best possible next action (max)</td></tr>
+          <tr><td>Exploration safety</td><td>Safer (knows its own behavior)</td><td>Can be aggressive</td></tr>
+          <tr><td>Convergence</td><td>Converges to π (not π*)</td><td>Converges to π* directly</td></tr>
+          <tr><td>Use case</td><td>Safe environments, cliff walking</td><td>Optimal policy, most RL</td></tr>
+        </table>
+        <div class="callout info"><div class="callout-label">TEMPORAL DIFFERENCE (TD)</div>Both SARSA and Q-learning are TD methods — they learn from incomplete episodes by bootstrapping: updating value estimates using other estimated values.</div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">🔍</div>
+        <div class="topic-name">Q-Learning</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>Q-Learning (Watkins, 1989) is an <strong>off-policy</strong> TD control algorithm that directly approximates the optimal action-value function Q*.</p>
+        <div class="formula">Q-Learning Update Rule:
+Q(s,a) ← Q(s,a) + α[r + γ·max_{a'} Q(s',a') − Q(s,a)]
+
+Where:
+α = learning rate (step size)
+r = immediate reward
+γ = discount factor
+max_{a'} Q(s',a') = best Q-value in next state
+[...] = TD error (δ)</div>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div><strong>Off-policy</strong>: behavior policy (ε-greedy) ≠ target policy (greedy)</div>
+          <div class="kp"><div class="kp-dot"></div><strong>TD error δ</strong> = r + γ·max Q(s',a') − Q(s,a) — the "surprise" signal</div>
+          <div class="kp"><div class="kp-dot"></div>Converges to Q* under standard stochastic approximation conditions</div>
+          <div class="kp"><div class="kp-dot"></div>ε-greedy exploration: ε probability random action, (1-ε) greedy</div>
+          <div class="kp"><div class="kp-dot"></div>Simple and effective for small discrete state-action spaces</div>
+        </div>
+        <div class="callout tip"><div class="callout-label">MEMORY TRICK</div>Q-learning update: "Current Q + learning rate × (Target − Current)" — just like gradient descent, moving Q toward the bootstrap target.</div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">🌊</div>
+        <div class="topic-name">SARSA — On-Policy TD Control</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p><strong>SARSA</strong> (State-Action-Reward-State-Action) is on-policy: it updates Q using the action actually taken by the current policy.</p>
+        <div class="formula">SARSA Update Rule:
+Q(s,a) ← Q(s,a) + α[r + γ·Q(s',a') − Q(s,a)]
+
+Note: a' is sampled from π (e.g., ε-greedy), NOT max
+
+Name: uses the quintuple (sₜ, aₜ, rₜ₊₁, sₜ₊₁, aₜ₊₁) for each update</div>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div>Key difference from Q-learning: uses Q(s', <strong>a'</strong>) not max Q(s', ·)</div>
+          <div class="kp"><div class="kp-dot"></div>On-policy → converges to the optimal ε-greedy policy (not exact optimal)</div>
+          <div class="kp"><div class="kp-dot"></div>Safer in stochastic, dangerous environments (avoids cliff edges)</div>
+          <div class="kp"><div class="kp-dot"></div>Famous example: Cliff Walking — SARSA avoids cliff, Q-learning walks near it</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">λ</div>
+        <div class="topic-name">SARSA(λ) — Eligibility Traces</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>SARSA(λ) extends SARSA with <strong>eligibility traces</strong> — a memory mechanism that assigns credit to recently visited states.</p>
+        <div class="formula">Eligibility Trace update:
+e(s,a) ← γ·λ·e(s,a) + 1  [for visited (s,a)]
+e(s,a) ← γ·λ·e(s,a)       [for other (s,a)]
+
+TD error:
+δₜ = rₜ₊₁ + γ·Q(sₜ₊₁,aₜ₊₁) − Q(sₜ,aₜ)
+
+Q update for ALL (s,a):
+Q(s,a) ← Q(s,a) + α·δₜ·e(s,a)
+
+Special cases:
+λ=0 → SARSA (one-step TD)
+λ=1 → Monte Carlo (full episode)</div>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div><strong>λ (lambda)</strong>: decay parameter for traces — how far back to assign credit</div>
+          <div class="kp"><div class="kp-dot"></div>Eligibility trace = recency × frequency — recent and frequent states get more credit</div>
+          <div class="kp"><div class="kp-dot"></div>Bridges TD(0) and Monte Carlo — uses n-step returns efficiently</div>
+          <div class="kp"><div class="kp-dot"></div>Faster learning by propagating reward backward through recent states</div>
+          <div class="kp"><div class="kp-dot"></div>λ ∈ (0.8, 0.95) often works well in practice</div>
+        </div>
+        <div class="callout info"><div class="callout-label">INTUITION</div>You scored a goal. Eligibility traces credit not just the last kick, but all your recent moves — the run, the pass, the positioning. More recent actions get more credit (decayed by γλ).</div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">🤖</div>
+        <div class="topic-name">DQN — Deep Q-Network</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <p>DQN (Mnih et al., DeepMind 2013/2015) combines Q-learning with deep neural networks to handle high-dimensional inputs like raw pixels.</p>
+        <div class="formula">DQN Architecture:
+Input: raw pixels (84×84×4 stacked frames)
+  → 3 Conv layers (feature extraction)
+  → 2 FC layers
+  → Output: Q(s,a) for each discrete action a
+
+Loss function:
+L(θ) = E[(yⱼ − Q(sⱼ,aⱼ;θ))²]
+
+Target yⱼ:
+yⱼ = rⱼ            (if terminal)
+yⱼ = rⱼ + γ·max_{a'} Q(sⱼ',a';θ⁻)  (otherwise)
+
+θ⁻ = frozen target network weights (updated every C steps)</div>
+        <div class="key-points">
+          <div class="kp"><div class="kp-dot"></div><strong>Key Innovation 1 — Experience Replay</strong>: store (s,a,r,s') tuples in replay buffer D; sample random mini-batches → breaks temporal correlation, improves sample efficiency</div>
+          <div class="kp"><div class="kp-dot"></div><strong>Key Innovation 2 — Target Network θ⁻</strong>: separate frozen network for computing targets; updated every C steps → stabilizes training (prevents chasing a moving target)</div>
+          <div class="kp"><div class="kp-dot"></div>Played 49 Atari games at human/superhuman level from raw pixels + reward only</div>
+          <div class="kp"><div class="kp-dot"></div>Extensions: Double DQN, Dueling DQN, Prioritized Experience Replay, Rainbow</div>
+        </div>
+        <div class="callout warn"><div class="callout-label">WHY TWO NETWORKS?</div>Without a target network, the TD target changes at every step (like chasing your own shadow). Freezing θ⁻ for C steps gives stable learning targets.</div>
+      </div>
+    </div>
+
+    <div class="topic-card" onclick="toggleTopic(this)">
+      <div class="topic-header">
+        <div class="topic-icon">⚔️</div>
+        <div class="topic-name">Q-Learning vs SARSA vs DQN — Comparison</div>
+        <div class="topic-arrow">▼</div>
+      </div>
+      <div class="topic-content">
+        <table class="compare-table">
+          <tr><th>Feature</th><th>Q-Learning</th><th>SARSA(λ)</th><th>DQN</th></tr>
+          <tr><td>Type</td><td>Off-policy TD</td><td>On-policy TD</td><td>Off-policy Deep</td></tr>
+          <tr><td>Function approx.</td><td>Tabular</td><td>Tabular/Linear</td><td>Deep Neural Net</td></tr>
+          <tr><td>State space</td><td>Small, discrete</td><td>Small/medium</td><td>High-dim (pixels)</td></tr>
+          <tr><td>Update target</td><td>max Q(s',a')</td><td>Q(s',a') from π</td><td>max Q(s',a';θ⁻)</td></tr>
+          <tr><td>Stability tricks</td><td>—</td><td>Eligibility traces</td><td>Replay + Target Net</td></tr>
+          <tr><td>Key hyperparams</td><td>α, γ, ε</td><td>α, γ, ε, λ</td><td>α, γ, ε, C, |D|</td></tr>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- QUIZ CO3 -->
+  <div class="quiz-section">
+    <div class="quiz-header">
+      <div class="quiz-title">⚡ Quick Check — CO3</div>
+      <div class="quiz-badge">CLICK TO ANSWER</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-text">Q1. SARSA is called an on-policy method because:</div>
+      <div class="options">
+        <button class="option" onclick="answer(this, false)">a) It uses a neural network to approximate Q</button>
+        <button class="option" onclick="answer(this, true)">b) The update uses the action actually taken by the current policy (a')</button>
+        <button class="option" onclick="answer(this, false)">c) It learns the optimal policy directly</button>
+        <button class="option" onclick="answer(this, false)">d) It stores experiences in a replay buffer</button>
+      </div>
+      <div class="answer-reveal">On-policy = the learning policy IS the behavior policy. SARSA uses the actual next action a' (from ε-greedy) in its update. Q-learning instead uses max Q(s',·) — off-policy.</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-text">Q2. In SARSA(λ), when λ=0, the algorithm reduces to:</div>
+      <div class="options">
+        <button class="option" onclick="answer(this, true)">a) One-step SARSA (TD(0))</button>
+        <button class="option" onclick="answer(this, false)">b) Monte Carlo</button>
+        <button class="option" onclick="answer(this, false)">c) Q-Learning</button>
+        <button class="option" onclick="answer(this, false)">d) Dynamic Programming</button>
+      </div>
+      <div class="answer-reveal">λ=0: traces decay immediately → only immediate transition used → standard SARSA / TD(0). λ=1: traces persist for full episode → Monte Carlo returns.</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-text">Q3. DQN's "Experience Replay" serves what primary purpose?</div>
+      <div class="options">
+        <button class="option" onclick="answer(this, false)">a) Speeding up the neural network computations</button>
+        <button class="option" onclick="answer(this, false)">b) Preventing the reward function from changing</button>
+        <button class="option" onclick="answer(this, true)">c) Breaking temporal correlations in training data for more stable learning</button>
+        <button class="option" onclick="answer(this, false)">d) Encoding the state as raw pixels</button>
+      </div>
+      <div class="answer-reveal">Sequential experiences are highly correlated — bad for SGD (assumes i.i.d. data). Replay buffer stores transitions and random mini-batch sampling breaks this correlation, stabilizing training.</div>
+    </div>
+
+    <div class="question-block">
+      <div class="question-text">Q4. Why does DQN use a separate "target network" θ⁻?</div>
+      <div class="options">
+        <button class="option" onclick="answer(this, false)">a) To handle continuous action spaces</button>
+        <button class="option" onclick="answer(this, false)">b) To process image inputs via convolutions</button>
+        <button class="option" onclick="answer(this, true)">c) To provide stable, slowly-changing targets — prevents divergence from chasing moving targets</button>
+        <button class="option" onclick="answer(this, false)">d) To perform eligibility trace updates</button>
+      </div>
+      <div class="answer-reveal">Without a frozen target network, every weight update changes both the prediction AND the target — like chasing your own shadow. θ⁻ is frozen for C steps, giving stable Bellman targets to train toward.</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<script>
+function switchModule(idx) {
+  document.querySelectorAll('.module-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('mod-' + idx).classList.add('active');
+  document.querySelector(`.nav-tab[data-mod="${idx}"]`).classList.add('active');
+  const fills = [33, 66, 100];
+  document.getElementById('progressFill').style.width = fills[idx] + '%';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleTopic(card) {
+  const wasExpanded = card.classList.contains('expanded');
+  // Close all in same grid
+  card.closest('.topics-grid').querySelectorAll('.topic-card').forEach(c => c.classList.remove('expanded'));
+  if (!wasExpanded) card.classList.add('expanded');
+}
+
+function answer(btn, isCorrect) {
+  const block = btn.closest('.question-block');
+  if (block.querySelector('.correct') || block.querySelector('.wrong')) return; // already answered
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect) {
+    block.querySelectorAll('.option').forEach(o => { if (o !== btn) o.disabled = true; });
+    // highlight correct
+    block.querySelectorAll('.option').forEach(o => {
+      o.addEventListener('click', function cb(e) {
+        if (this.onclick.toString().includes('true')) {
+          this.classList.add('correct');
+          block.querySelectorAll('.option').forEach(x => x.disabled = true);
+          block.querySelector('.answer-reveal').classList.add('show');
+          this.removeEventListener('click', cb);
+        }
+      });
+    });
+  } else {
+    block.querySelectorAll('.option').forEach(o => o.disabled = true);
+    block.querySelector('.answer-reveal').classList.add('show');
+  }
+}
+</script>
+</body>
+</html>
